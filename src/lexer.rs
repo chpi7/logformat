@@ -1,4 +1,6 @@
-#[derive(Debug, Clone)]
+use std::collections::HashSet;
+
+#[derive(Debug, Clone, PartialEq)]
 pub enum Token {
     CloseBracket,
     OpenBracket,
@@ -10,14 +12,16 @@ pub enum Token {
 
 pub struct Lexer {
     input: String,
-    next_token: Option<Token>
+    next_token: Option<Token>,
+    non_string_chars: HashSet<char>
 }
 
 impl Lexer {
     pub fn create(input: &str) -> Lexer {
-        Lexer { 
+        Lexer {
             input: String::from(input).chars().rev().collect(),
-            next_token: None
+            next_token: None,
+            non_string_chars: HashSet::from(['(', ')', '=', ','])
         }
     }
 
@@ -31,7 +35,6 @@ impl Lexer {
     }
 
     fn consume(&mut self) -> Option<Token> {
-
         while let Some(next_char) = self.input.pop() {
             if !next_char.is_whitespace() {
                 self.input.push(next_char);
@@ -51,7 +54,7 @@ impl Lexer {
             } else if next_char.is_alphabetic() {
                 let mut text_val = String::from(next_char);
                 while let Some(next_char) = self.input.pop() {
-                    if next_char.is_alphanumeric() {
+                    if !self.non_string_chars.contains(&next_char) {
                         text_val.push(next_char);
                     } else {
                         // If the character is not part of the text token anymore put it back
@@ -59,7 +62,8 @@ impl Lexer {
                         break;
                     }
                 }
-                return Some(Token::Text(text_val));
+                // Because whitespace is allowed in the string we should trim off whitespace at the end
+                return Some(Token::Text(text_val.trim_end().to_string()));
             } else if next_char.is_numeric() {
                 // Parse number
                 let mut num_val = String::from(next_char);
@@ -82,6 +86,53 @@ impl Lexer {
             return None;
         }
     }
+}
 
+#[cfg(test)]
+mod tests {
 
+    use crate::lexer::*;
+
+    #[test]
+    fn lex_number() {
+        let input = "0123.034";
+        let mut sut = Lexer::create(input);
+        sut.next();
+        let result = sut.get_next_token();
+        assert_eq!(result, Some(Token::Number(123.034)));
+    }
+
+    #[test]
+    fn lex_text() {
+        let input = "This is a super nice str1ng 1234";
+        let mut sut = Lexer::create(input);
+        sut.next();
+        let result = sut.get_next_token();
+        assert_eq!(result, Some(Token::Text(String::from(input))));
+    }
+
+    #[test]
+    fn lex_object() {
+        let input = "MyClass(name=Hans, next_attribute=123)";
+        let expected = vec![
+            Token::Text(String::from("MyClass")),
+            Token::OpenBracket,
+            Token::Text(String::from("name")),
+            Token::Equals,
+            Token::Text(String::from("Hans")),
+            Token::Comma,
+            Token::Text(String::from("next_attribute")),
+            Token::Equals,
+            Token::Number(123.0),
+            Token::CloseBracket
+        ];
+        let mut sut = Lexer::create(input);
+        sut.next();
+        let mut result = vec![];
+        while let Some(token) = sut.get_next_token() {
+            result.push(token);
+            sut.next();
+        }
+        assert_eq!(result, expected);
+    }
 }

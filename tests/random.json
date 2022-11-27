@@ -1,0 +1,44 @@
+
+{
+  "value": "Person(name = Hans, address = Address(street = Hauptstrasse 123, number = 20), gender = male)",
+  "_id": "6383bb5c3dceeadcc3c66477",
+  "index": 0,
+  "guid": "71bc37c2-ef67-4bc1-a102-103ceaa97965",
+  "isActive": false,
+  "balance": "$3,466.59",
+  "picture": "http://placehold.it/32x32",
+  "age": 36,
+  "eyeColor": "green",
+  "name": "Joanne Compton",
+  "gender": "female",
+  "company": "BLEENDOT",
+  "email": "joannecompton@bleendot.com",
+  "phone": "+1 (926) 470-3251",
+  "address": "968 Elliott Place, Dundee, Georgia, 5754",
+  "about": "Non minim veniam mollit est ullamco. Cupidatat elit officia nulla ut amet. Voluptate labore sunt incididunt ipsum labore sunt laborum reprehenderit quis culpa id officia.\r\n",
+  "registered": "2022-09-11T07:12:52 -02:00",
+  "latitude": -30.902833,
+  "longitude": 5.461425
+}
+
+{
+  "value": "OtherPersonClass(name = Franz, address = Address(street = Hauptstrasse, number = 20), gender = male)",
+  "_id": "6383bb5c87054eae0fec795f",
+  "index": 1,
+  "guid": "76b63e21-c99a-4028-b305-5cc1343a45a0",
+  "isActive": true,
+  "balance": "$3,235.00",
+  "picture": "http://placehold.it/32x32",
+  "age": 39,
+  "eyeColor": "green",
+  "name": "Lupe Peters",
+  "gender": "female",
+  "company": "EXTRAGENE",
+  "email": "lupepeters@extragene.com",
+  "phone": "+1 (970) 573-3039",
+  "address": "166 Abbey Court, Konterra, South Carolina, 3202",
+  "about": "Non anim cupidatat mollit enim exercitation voluptate culpa et anim adipisicing ex nisi do. Minim non labore est anim deserunt. Ex consequat aliquip excepteur incididunt labore aliqua eu aliquip reprehenderit. Ex minim aliquip labore ex cillum veniam fugiat sunt anim cupidatat irure laborum proident qui. Sunt id sint aute anim ea mollit Lorem reprehenderit consectetur consectetur incididunt ex.\r\n",
+  "registered": "2014-05-05T06:06:52 -02:00",
+  "latitude": -75.473533,
+  "longitude": -28.709888
+}
