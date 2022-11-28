@@ -1,5 +1,5 @@
-use crate::lexer::{Lexer, Token};
 use crate::ast::*;
+use crate::lexer::{Lexer, Token};
 
 /*
     MyClass(name = test123, other = 123, reference = MyOtherClass(id = 123, age = 23, name = heyho))
@@ -22,6 +22,41 @@ impl Parser {
         let mut lexer = Lexer::create(input);
         lexer.next();
         Parser { lexer }
+    }
+
+    pub fn parse_log_message(&mut self) -> Option<LogMessage> {
+        if let Some(Token::Text(text)) = self.lexer.get_next_token() {
+
+            let parts: Vec<&str> = text.split(char::is_whitespace).collect();
+            let mut class_name = String::from("");
+            let mut message_before = text.clone();
+
+            if let Some((last, remainder)) = parts.split_last() {
+                class_name = String::from(*last);
+                message_before = (*remainder).join(" ");
+            }
+            
+            // Make it appear to the parser as if this step never happened
+            // self.lexer.next();
+            self.lexer.overwrite_token(Token::Text(class_name));
+
+            let log_entity = self.parse_log_entity()?;
+            let remaining_text = if let Some(Token::Text(t)) = self.lexer.get_next_token() {
+                t
+            } else {
+                String::from("")
+            };
+            return Some(LogMessage {
+                message: message_before + " {{ log entity }} " + remaining_text.as_str(),
+                log_entity
+            });
+        } else {
+            println!(
+                "Expected LogMessage to start with a string but found {:?}",
+                self.lexer.get_next_token()
+            );
+            return None;
+        }
     }
 
     pub fn parse_log_entity(&mut self) -> Option<LogEntity> {
@@ -49,7 +84,10 @@ impl Parser {
                                 self.lexer.next();
                                 Some(LogEntity::Object(text, attributes))
                             } else {
-                                println!("Expected closing bracket after attribute list but found {:?}", self.lexer.get_next_token());
+                                println!(
+                                    "Expected closing bracket after attribute list but found {:?}",
+                                    self.lexer.get_next_token()
+                                );
                                 None
                             }
                         }
@@ -91,6 +129,15 @@ impl Parser {
             self.lexer.next();
             if let Some(Token::Equals) = self.lexer.get_next_token() {
                 self.lexer.next();
+
+                if let Some(Token::Comma) = self.lexer.get_next_token() {
+                    // DONT consume the comma here because it is not part of the attribute!
+                    //self.lexer.next();
+                    
+                    // Attribute with no value
+                    return Some(Attribute { key: attribute_name, value: LogEntity::Null })
+                }
+
                 let value = self
                     .parse_log_entity()
                     .expect("Expected LogEntity as attribute value but could not parse one.");
@@ -98,6 +145,7 @@ impl Parser {
                     key: attribute_name,
                     value,
                 })
+
             } else {
                 println!(
                     "Expected equals between name and value but found {:?}",

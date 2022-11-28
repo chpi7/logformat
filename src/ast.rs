@@ -2,10 +2,17 @@ use serde::Serialize;
 use std::io::Write;
 
 #[derive(Debug, Serialize)]
+pub struct LogMessage {
+    pub message: String,
+    pub log_entity: LogEntity
+}
+
+#[derive(Debug, Serialize)]
 pub enum LogEntity {
     Object(String, AttributeList),
     Text(String),
     Number(f32),
+    Null,
 }
 
 #[derive(Debug, Serialize)]
@@ -17,6 +24,14 @@ pub struct AttributeList {
 pub struct Attribute {
     pub key: String,
     pub value: LogEntity,
+}
+
+impl LogMessage {
+    pub fn pretty_print(&self, indent: u32, out: &mut dyn Write) {
+        out.write(self.message.as_bytes()).unwrap();
+        write!(out, "\n").unwrap();
+        self.log_entity.pretty_print(indent, 0, out);
+    }
 }
 
 impl LogEntity {
@@ -41,6 +56,7 @@ impl LogEntity {
             LogEntity::Number(value) => {
                 write!(out, "{}", value).unwrap();
             }
+            LogEntity::Null => {}
         }
         if indent_level == 0 {
             writeln!(out, "").unwrap();
@@ -66,6 +82,7 @@ impl LogEntity {
             LogEntity::Number(value) => {
                 write!(out, "{}", value).unwrap();
             }
+            LogEntity::Null => {}
         }
     }
 }

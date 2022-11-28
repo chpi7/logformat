@@ -5,11 +5,12 @@ mod parser;
 use crate::parser::*;
 use std::io::{stdout, stdin, Result, BufRead};
 use std::io;
+use lexer::Lexer;
 use serde_json::{StreamDeserializer, Value};
 
 fn main() {
 
-    let target_field_name = "value";
+    let target_field_name = "message";
 
     let stdin = io::stdin();
     let mut stdout = io::stdout();
@@ -20,13 +21,16 @@ fn main() {
     for value in values {
         if let Ok(mut value) = value {
             let pretty_print_value = &value[target_field_name];
+
             let mut parser = Parser::create(pretty_print_value.as_str().unwrap());
-            let log_entity = parser.parse_log_entity().unwrap();
+            let log_message = parser.parse_log_message().unwrap();
+            // println!("{:?}", log_message);
 
             value[target_field_name] = Value::Null;
 
-            println!("Deserialized object {}", value);
-            log_entity.pretty_print(2, 0, &mut stdout)
+            print!(">>> ");
+            println!("Log object {}", value);
+            log_message.pretty_print(2, &mut stdout)
         }
     }
 

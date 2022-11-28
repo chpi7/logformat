@@ -25,6 +25,12 @@ impl Lexer {
         }
     }
 
+    /// This is used for a small trick. Use at your own risk!
+    pub fn overwrite_token(&mut self, token: Token) {
+        self.next_token = Some(token);
+        // println!("Overwrite next token: {:?}", self.next_token);
+    }
+
     pub fn next(&mut self) {
         self.next_token = self.consume();
         // println!("Next token: {:?}", self.next_token);
