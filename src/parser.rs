@@ -9,7 +9,7 @@ use crate::lexer::{Lexer, Token};
     LogEntity := Object | Text | Number
     Object := Text "(" [AttributeList] ")"          --> parse AttrList if next token is not ")"
     AttributeList := Attribute ("," Attribute)*
-    Attribute := Text "=" LogEntity                 "name = test123" or "reference = Object (id = 123)"
+    Attribute := Text "=" [LogEntity]                 "name = test123" or "reference = Object (id = 123)" --> if next token is comma, no value exists
     Text := [a-zA-Z]+[a-zA-Z0-9]*
 */
 
