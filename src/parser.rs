@@ -17,6 +17,11 @@ pub struct Parser {
     lexer: Lexer,
 }
 
+#[derive(Debug)]
+pub struct ParseError {
+    what: String,
+}
+
 impl Parser {
     pub fn create(input: &str) -> Parser {
         let mut lexer = Lexer::create(input);
@@ -24,9 +29,8 @@ impl Parser {
         Parser { lexer }
     }
 
-    pub fn parse_log_message(&mut self) -> Option<LogMessage> {
+    pub fn parse_log_message(&mut self) -> Result<LogMessage, ParseError> {
         if let Some(Token::Text(text)) = self.lexer.get_next_token() {
-
             let parts: Vec<&str> = text.split(char::is_whitespace).collect();
             let mut class_name = String::from("");
             let mut message_before = text.clone();
@@ -35,7 +39,7 @@ impl Parser {
                 class_name = String::from(*last);
                 message_before = (*remainder).join(" ");
             }
-            
+
             // Make it appear to the parser as if this step never happened
             // self.lexer.next();
             self.lexer.overwrite_token(Token::Text(class_name));
@@ -46,31 +50,32 @@ impl Parser {
             } else {
                 String::from("")
             };
-            return Some(LogMessage {
+            return Ok(LogMessage {
                 message: message_before + " {{ log entity }} " + remaining_text.as_str(),
-                log_entity
+                log_entity,
             });
         } else {
-            println!(
-                "Expected LogMessage to start with a string but found {:?}",
-                self.lexer.get_next_token()
-            );
-            return None;
+            return Err(ParseError {
+                what: format!(
+                    "Expected LogMessage to start with a string but found {:?}",
+                    self.lexer.get_next_token()
+                ),
+            });
         }
     }
 
-    pub fn parse_log_entity(&mut self) -> Option<LogEntity> {
+    pub fn parse_log_entity(&mut self) -> Result<LogEntity, ParseError> {
         if let Some(token) = self.lexer.get_next_token() {
             self.lexer.next();
 
             match token {
-                Token::Number(value) => Some(LogEntity::Number(value)),
+                Token::Number(value) => Ok(LogEntity::Number(value)),
                 Token::Text(text) => {
                     if let Some(Token::OpenBracket) = self.lexer.get_next_token() {
                         self.lexer.next();
 
                         if let Some(Token::CloseBracket) = self.lexer.get_next_token() {
-                            Some(LogEntity::Object(
+                            Ok(LogEntity::Object(
                                 text,
                                 AttributeList {
                                     attributes: Vec::new(),
@@ -82,30 +87,32 @@ impl Parser {
                                 .expect("Could not parse expected attribute list.");
                             if let Some(Token::CloseBracket) = self.lexer.get_next_token() {
                                 self.lexer.next();
-                                Some(LogEntity::Object(text, attributes))
+                                Ok(LogEntity::Object(text, attributes))
                             } else {
-                                println!(
+                                Err(ParseError {
+                                    what: format!(
                                     "Expected closing bracket after attribute list but found {:?}",
                                     self.lexer.get_next_token()
-                                );
-                                None
+                                ),
+                                })
                             }
                         }
                     } else {
-                        Some(LogEntity::Text(text))
+                        Ok(LogEntity::Text(text))
                     }
                 }
-                _ => {
-                    println!("Unexpected token while parsing LogEntity: {:?}", token);
-                    None
-                }
+                _ => Err(ParseError {
+                    what: format!("Unexpected token while parsing LogEntity: {:?}", token),
+                }),
             }
         } else {
-            None
+            Err(ParseError {
+                what: String::from("No token remaining to parse LogEntity"),
+            })
         }
     }
 
-    fn parse_attribute_list(&mut self) -> Option<AttributeList> {
+    fn parse_attribute_list(&mut self) -> Result<AttributeList, ParseError> {
         let first = self
             .parse_attribute()
             .expect("Expected attribute but could not parse one.");
@@ -120,10 +127,10 @@ impl Parser {
             attributes.push(next);
         }
         // println!("Done parsing attribute list content");
-        Some(AttributeList { attributes })
+        Ok(AttributeList { attributes })
     }
 
-    fn parse_attribute(&mut self) -> Option<Attribute> {
+    fn parse_attribute(&mut self) -> Result<Attribute, ParseError> {
         // Parse name
         if let Some(Token::Text(attribute_name)) = self.lexer.get_next_token() {
             self.lexer.next();
@@ -132,33 +139,34 @@ impl Parser {
 
                 if let Some(Token::Comma) = self.lexer.get_next_token() {
                     // DONT consume the comma here because it is not part of the attribute!
-                    //self.lexer.next();
-                    
-                    // Attribute with no value
-                    return Some(Attribute { key: attribute_name, value: LogEntity::Null })
+                    return Ok(Attribute {
+                        key: attribute_name,
+                        value: LogEntity::Null,
+                    });
                 }
 
                 let value = self
                     .parse_log_entity()
                     .expect("Expected LogEntity as attribute value but could not parse one.");
-                Some(Attribute {
+                Ok(Attribute {
                     key: attribute_name,
                     value,
                 })
-
             } else {
-                println!(
-                    "Expected equals between name and value but found {:?}",
-                    self.lexer.get_next_token()
-                );
-                None
+                Err(ParseError {
+                    what: format!(
+                        "Expected equals between name and value but found {:?}",
+                        self.lexer.get_next_token()
+                    ),
+                })
             }
         } else {
-            println!(
-                "Expected attribute name but found token {:?}",
-                self.lexer.get_next_token()
-            );
-            None
+            Err(ParseError {
+                what: format!(
+                    "Expected attribute name but found token {:?}",
+                    self.lexer.get_next_token()
+                ),
+            })
         }
     }
 }

@@ -28,8 +28,8 @@ pub struct Attribute {
 
 impl LogMessage {
     pub fn pretty_print(&self, indent: u32, out: &mut dyn Write) {
-        out.write(self.message.as_bytes()).unwrap();
-        write!(out, "\n").unwrap();
+        // out.write(self.message.as_bytes()).unwrap();
+        // write!(out, "\n").unwrap();
         self.log_entity.pretty_print(indent, 0, out);
     }
 }

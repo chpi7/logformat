@@ -26,7 +26,7 @@ fn main() {
             let log_message = parser.parse_log_message().unwrap();
             // println!("{:?}", log_message);
 
-            value[target_field_name] = Value::Null;
+            value[target_field_name] = Value::String(log_message.message.clone());
 
             print!(">>> ");
             println!("Log object {}", value);
