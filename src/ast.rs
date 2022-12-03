@@ -1,10 +1,13 @@
-use serde::Serialize;
 use std::io::Write;
+
+use serde::Serialize;
+
+use crate::visitor::*;
 
 #[derive(Debug, Serialize)]
 pub struct LogMessage {
     pub message: String,
-    pub log_entity: LogEntity
+    pub log_entity: LogEntity,
 }
 
 #[derive(Debug, Serialize)]
@@ -27,88 +30,49 @@ pub struct Attribute {
 }
 
 impl LogMessage {
-    pub fn pretty_print(&self, indent: u32, out: &mut dyn Write) {
-        // out.write(self.message.as_bytes()).unwrap();
-        // write!(out, "\n").unwrap();
-        self.log_entity.pretty_print(indent, 0, out);
+    pub fn print_json(&self, out: &mut dyn Write) {
+        writeln!(out, "{}", self.message).unwrap();
+        
+        let mut json_printer = JsonPrinterVisitor::create(out, 2);
+        self.log_entity.accept(&mut json_printer);
+        
+        writeln!(out, "").unwrap();
     }
 }
 
-impl LogEntity {
-
-    pub fn pretty_print(&self, indent: u32, indent_level: u32, out: &mut dyn Write) {
-        let indent_str = " ".repeat((indent * indent_level) as usize);
-        match self {
-            LogEntity::Object(name, attributes) => {
-                out.write(name.as_bytes()).unwrap();
-                out.write("(\n".as_bytes()).unwrap();
-                let attribute_list = &attributes.attributes;
-                for (idx, attribute) in attribute_list.into_iter().enumerate() {
-                    let is_last = idx == attribute_list.len() - 1;
-                    attribute.pretty_print(indent, indent_level + 1, out, is_last);
-                }
-                out.write(indent_str.as_bytes()).unwrap();
-                out.write(")".as_bytes()).unwrap();
-            }
-            LogEntity::Text(text) => {
-                write!(out, "\"{}\"", text).unwrap();
-            }
-            LogEntity::Number(value) => {
-                write!(out, "{}", value).unwrap();
-            }
-            LogEntity::Null => {}
-        }
-        if indent_level == 0 {
-            writeln!(out, "").unwrap();
-        }
-    }
-
-    pub fn to_json(&self, indent: u32, indent_level: u32, out: &mut dyn Write) {
-        let indent_str = " ".repeat((indent * indent_level) as usize);
+impl AstNode for LogEntity {
+    fn accept(&self, visitor: &mut dyn AstVisitor) {
         match self {
             LogEntity::Object(_, attributes) => {
-                out.write("{\n".as_bytes()).unwrap();
-                let attribute_list = &attributes.attributes;
-                for (idx, attribute) in attribute_list.into_iter().enumerate() {
-                    let is_last = idx == attribute_list.len() - 1;
-                    attribute.to_json(indent, indent_level + 1, out, is_last);
-                }
-                out.write(indent_str.as_bytes()).unwrap();
-                out.write("}".as_bytes()).unwrap();
+                visitor.visit_log_entity_object_entry(self);
+                attributes.accept(visitor);
+                visitor.visit_log_entity_object_exit(self);
             }
-            LogEntity::Text(text) => {
-                write!(out, "\"{}\"", text).unwrap();
-            }
-            LogEntity::Number(value) => {
-                write!(out, "{}", value).unwrap();
-            }
-            LogEntity::Null => {}
+            LogEntity::Text(_) => visitor.visit_log_entity_text(self),
+            LogEntity::Number(_) => visitor.visit_log_entity_number(self),
+            LogEntity::Null => visitor.visit_log_entity_null(self),
         }
     }
 }
 
-impl Attribute {
-    pub fn to_json(&self, indent: u32, indent_level: u32, out: &mut dyn Write, is_last: bool) {
-        let indent_str = " ".repeat((indent * indent_level) as usize);
-        out.write(indent_str.as_bytes()).unwrap();
-        write!(out, "{} = ", self.key).unwrap();
-        self.value.to_json(indent, indent_level, out);
-        if is_last {
-            write!(out, "\n").unwrap();
-        } else {
-            write!(out, ",\n").unwrap();
+impl AstNode for AttributeList {
+    fn accept(&self, visitor: &mut dyn AstVisitor) {
+        visitor.visit_attribute_list_entry(self);
+        let mut is_first = true;
+        for attribute in &self.attributes {
+            if !is_first {
+                visitor.visit_attribute_list_between(self);
+            }
+            attribute.accept(visitor);
+            is_first = false;
         }
+        visitor.visit_attribute_list_exit(self);
     }
+}
 
-    pub fn pretty_print(&self, indent: u32, indent_level: u32, out: &mut dyn Write, is_last: bool) {
-        let indent_str = " ".repeat((indent * indent_level) as usize);
-        out.write(indent_str.as_bytes()).unwrap();
-        write!(out, "{} = ", self.key).unwrap();
-        self.value.pretty_print(indent, indent_level, out);
-        if is_last {
-            write!(out, "\n").unwrap();
-        } else {
-            write!(out, ",\n").unwrap();
-        }
+impl AstNode for Attribute {
+    fn accept(&self, visitor: &mut dyn AstVisitor) {
+        visitor.visit_attribute(self);
+        self.value.accept(visitor);
     }
 }

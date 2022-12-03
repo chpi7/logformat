@@ -1,5 +1,5 @@
 {
-  "message": "Bla bli blubb this is an awesome message: MyClass1(id=as89d-1230asd-1123, state=SOMETHING, ref = OtherClass(id=123),filePath=nfs://this/is/a/file.txt, unsetAttribute=, createdAt=null) something afterwards",
+  "message": "Bla bli blubb this is an awesome message: MyClass1(id=as89d-1230asd-1123, state=SOMETHING, ref = OtherClass(id=123, othername=blabla),filePath=nfs://this/is/a/file.txt, unsetAttribute=, createdAt=null) something afterwards",
   "logger_name": "de.company.package.logging.MyService",
   "level": "DEBUG",
   "traceId": "as8dzoa98s6zd",
