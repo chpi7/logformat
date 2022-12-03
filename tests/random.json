@@ -37,3 +37,11 @@
   "traceId": "as8dzoa98s6zd",
   "spanId": "as8dzoa98s6zd"
 }
+
+{
+  "message": "heyho SomeClass1(id = a123-abc) and also (asdkhj((aks)jdh) and some text afterwards",
+  "logger_name": "de.company.package.logging.MyService",
+  "level": "DEBUG",
+  "traceId": "as8dzoa98s6zd",
+  "spanId": "as8dzoa98s6zd"
+}

@@ -16,8 +16,9 @@ use crate::lexer::{Lexer, Token};
     Text := [a-zA-Z]+[a-zA-Z0-9]*
 */
 
-pub struct Parser {
+pub struct Parser<'a> {
     lexer: Lexer,
+    input: &'a str,
 }
 
 #[derive(Debug)]
@@ -31,67 +32,63 @@ impl fmt::Display for ParseError {
     }
 }
 
-impl Parser {
+impl Parser<'_> {
     pub fn create(input: &str) -> Parser {
-        let mut lexer = Lexer::create(input);
-        lexer.next();
-        Parser { lexer }
+        let lexer = Lexer::create(input);
+        Parser { lexer, input }
     }
 
     pub fn parse_log_message(&mut self) -> Result<LogMessage, ParseError> {
-        if let Some(Token::Text(text)) = self.lexer.get_next_token() {
-            let parts: Vec<&str> = text.split(char::is_whitespace).collect();
-            let mut class_name = String::from("");
-            let mut message_before = text.clone();
+        
+        let mut bracket_counter = 0;
+        let mut log_entites = vec![];
+        let mut current_object_string = "".to_string();
+        let mut current_log_string = "".to_string();
 
-            if let Some((last, remainder)) = parts.split_last() {
-                class_name = String::from(*last);
-                message_before = (*remainder).join(" ");
-            }
+        for char in self.input.chars() {
+            match char {
+                ')' => {
+                    current_object_string.push(char);
+                    bracket_counter -= 1;
+                    if bracket_counter == 0 {
+                        // some object is probably fully done
+                        self.lexer = Lexer::create(current_object_string.as_str());
+                        self.lexer.next();
+                        if let Ok(log_entity) = self.parse_log_entity() {
+                            log_entites.push(log_entity);
+                            current_log_string += format!(" {{{{ Log Entity {} }}}}", log_entites.len()).as_str();
+                        } else {
+                            current_log_string += " ";
+                            current_log_string += current_object_string.as_str();
+                        }
+                        current_object_string = "".to_string();
+                    }
+                },
+                '(' => {
 
-            // Make it appear to the parser as if this step never happened
-            // self.lexer.next();
-            self.lexer.overwrite_token(Token::Text(class_name));
+                    if bracket_counter == 0 {
+                        let message_parts: Vec<&str> = current_log_string.split(char::is_whitespace).collect();
+                        if let Some((last, elements)) = message_parts.split_last() {
+                            current_object_string += last;
+                            current_log_string = elements.join(" ");
+                        }
+                    }
 
-            let log_entity = self.parse_log_entity()?;
-            
-            match log_entity {
-                LogEntity::Text(_) | LogEntity::Number(_) | LogEntity::Null => {
-                    // did not find any object after the text
-                    Ok(LogMessage {
-                        message: text,
-                        log_entity: None,
-                    })
+                    current_object_string.push(char);
+                    bracket_counter += 1;
                 },
                 _ => {
-                    // Add additional parse method to parse: [Text] [LogEntity]
-                    // Then chain those until there is no input left
-                    // Allows to parse multiple Log Entities with text in between
-                    match self.lexer.get_next_token() {
-                        Some(Token::Text(t)) => {
-                            let remaining_text = t;
-                            Ok(LogMessage {
-                                message: message_before + " {{ log entity }} " + remaining_text.as_str(),
-                                log_entity: Some(log_entity),
-                            })
-                        }
-                        _ => {
-                            Ok(LogMessage {
-                                message: message_before + " {{ log entity }}",
-                                log_entity: Some(log_entity),
-                            })
-                        }
+                    if bracket_counter == 0 {
+                        current_log_string.push(char);
+                    } else {
+                        current_object_string.push(char);
                     }
                 }
             }
-        } else {
-            Err(ParseError {
-                what: format!(
-                    "Expected LogMessage to start with a string but found {:?}",
-                    self.lexer.get_next_token()
-                ),
-            })
         }
+
+        Ok(LogMessage { message: current_log_string + " " + current_object_string.as_str(), log_entity: log_entites })
+
     }
 
     pub fn parse_log_entity(&mut self) -> Result<LogEntity, ParseError> {

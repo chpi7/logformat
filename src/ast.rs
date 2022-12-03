@@ -7,7 +7,7 @@ use crate::visitor::*;
 #[derive(Debug, Serialize)]
 pub struct LogMessage {
     pub message: String,
-    pub log_entity: Option<LogEntity>,
+    pub log_entity: Vec<LogEntity>,
 }
 
 #[derive(Debug, Serialize)]
@@ -31,8 +31,12 @@ pub struct Attribute {
 
 impl LogMessage {
     pub fn write_json(&self, out: &mut dyn Write) {
-        if let Some(log_entity) = &self.log_entity {
-            write!(out, "Log Entity = ").unwrap();
+        for (idx, log_entity) in self.log_entity.iter().enumerate() {
+            if self.log_entity.len() > 1 {
+                write!(out, "Log Entity {} = ", idx + 1).unwrap();
+            } else {
+                write!(out, "Log Entity").unwrap();
+            }
             let mut json_printer = JsonPrinterVisitor::create(out, 2);
             log_entity.accept(&mut json_printer);
             writeln!(out, "").unwrap();
