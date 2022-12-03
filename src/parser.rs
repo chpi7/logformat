@@ -1,3 +1,5 @@
+use std::fmt;
+
 use crate::ast::*;
 use crate::lexer::{Lexer, Token};
 
@@ -6,6 +8,7 @@ use crate::lexer::{Lexer, Token};
 
     Grammar:
 
+    LogMessage := [Text] LogEntity [Text]
     LogEntity := Object | Text | Number
     Object := Text "(" [AttributeList] ")"          --> parse AttrList if next token is not ")"
     AttributeList := Attribute ("," Attribute)*
@@ -20,6 +23,12 @@ pub struct Parser {
 #[derive(Debug)]
 pub struct ParseError {
     what: String,
+}
+
+impl fmt::Display for ParseError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "ParseError(what={})", self.what)
+    }
 }
 
 impl Parser {
@@ -45,22 +54,43 @@ impl Parser {
             self.lexer.overwrite_token(Token::Text(class_name));
 
             let log_entity = self.parse_log_entity()?;
-            let remaining_text = if let Some(Token::Text(t)) = self.lexer.get_next_token() {
-                t
-            } else {
-                String::from("")
-            };
-            return Ok(LogMessage {
-                message: message_before + " {{ log entity }} " + remaining_text.as_str(),
-                log_entity,
-            });
+            
+            match log_entity {
+                LogEntity::Text(_) | LogEntity::Number(_) | LogEntity::Null => {
+                    // did not find any object after the text
+                    Ok(LogMessage {
+                        message: text,
+                        log_entity: None,
+                    })
+                },
+                _ => {
+                    // Add additional parse method to parse: [Text] [LogEntity]
+                    // Then chain those until there is no input left
+                    // Allows to parse multiple Log Entities with text in between
+                    match self.lexer.get_next_token() {
+                        Some(Token::Text(t)) => {
+                            let remaining_text = t;
+                            Ok(LogMessage {
+                                message: message_before + " {{ log entity }} " + remaining_text.as_str(),
+                                log_entity: Some(log_entity),
+                            })
+                        }
+                        _ => {
+                            Ok(LogMessage {
+                                message: message_before + " {{ log entity }}",
+                                log_entity: Some(log_entity),
+                            })
+                        }
+                    }
+                }
+            }
         } else {
-            return Err(ParseError {
+            Err(ParseError {
                 what: format!(
                     "Expected LogMessage to start with a string but found {:?}",
                     self.lexer.get_next_token()
                 ),
-            });
+            })
         }
     }
 

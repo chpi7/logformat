@@ -13,3 +13,27 @@
   "traceId": "as8dzoa98s6zd",
   "spanId": "as8dzoa98s6zd"
 }
+
+{
+  "message": "This is some log message without any object",
+  "logger_name": "de.company.package.logging.MyService",
+  "level": "DEBUG",
+  "traceId": "as8dzoa98s6zd",
+  "spanId": "as8dzoa98s6zd"
+}
+
+{
+  "message": "heyho SomeClass1(id = abcdefg) and also SomeClass2(id=asda987das9d, name=blabla) and some text afterwards",
+  "logger_name": "de.company.package.logging.MyService",
+  "level": "DEBUG",
+  "traceId": "as8dzoa98s6zd",
+  "spanId": "as8dzoa98s6zd"
+}
+
+{
+  "message": "heyho SomeClass1(id = a123-abc) and also SomeClass2(id=asda987d-as9d, name=blabla) and some text afterwards",
+  "logger_name": "de.company.package.logging.MyService",
+  "level": "DEBUG",
+  "traceId": "as8dzoa98s6zd",
+  "spanId": "as8dzoa98s6zd"
+}

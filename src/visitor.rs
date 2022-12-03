@@ -30,7 +30,7 @@ impl JsonPrinterVisitor<'_> {
         JsonPrinterVisitor {
             out,
             indent_size,
-            current_indent_level: 0
+            current_indent_level: 0,
         }
     }
 
