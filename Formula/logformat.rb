@@ -1,4 +1,4 @@
-class LogFormat < Formula
+class Logformat < Formula
     desc "Simply log formatting tool"
     homepage "https://github.com/chpi7/logformat"
     url "https://github.com/chpi7/logformat/archive/refs/tags/0.0.1.tar.gz"
