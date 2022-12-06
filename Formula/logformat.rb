@@ -9,7 +9,7 @@ class Logformat < Formula
     depends_on "rust" => :build
 
     def install
-        system "cargo", "build", "--release", "--bin", "hello"
-        bin.install "target/release/hello"
+        system "cargo", "build", "--release", "--bin", "logformat"
+        bin.install "target/release/logformat"
     end
 end
